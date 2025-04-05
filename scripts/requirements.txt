@@ -1,0 +1,4 @@
+# Add your Python package dependencies here
+# Format: package_name==version
+Pillow==10.1.0  # Python Imaging Library
+argparse==1.4.0  # Command line argument parsing 
