@@ -5,8 +5,20 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.9/userguide/building_java_projects.html in the Gradle documentation.
  */
 
-// Apply the java-library plugin for API and implementation separation.
-apply plugin: 'java-library'
+plugins {
+    // Apply the java-library plugin for API and implementation separation.
+    id 'java-library'
+    // Apply the application plugin to enable application packaging
+    id 'application'
+    // Apply the jpackage plugin for native executables
+    id 'org.beryx.jlink' version '2.26.0'
+}
+
+// Set the main class for the application
+application {
+    mainClass = 'tracebite.SwingApp'
+    mainModule = 'tracebite.app'  // We'll create this module
+}
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -29,11 +41,64 @@ dependencies {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
+}
+
+// Ensure source and target compatibility
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
 }
 
 test {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+
+// Check if icon files exist
+def windowsIconExists = file("src/main/resources/icon.ico").exists()
+def macOSIconExists = file("src/main/resources/icon.icns").exists()
+def linuxIconExists = file("src/main/resources/icon.png").exists()
+
+// Configure jlink
+jlink {
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = 'tracebite'
+    }
+    
+    jpackage {
+        // Common settings
+        appVersion = '1.0.0'
+        vendor = 'Tracebite'
+        
+        // Windows-specific settings
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            installerOptions += ['--win-dir-chooser', '--win-menu', '--win-shortcut']
+            if (windowsIconExists) {
+                imageOptions += ['--icon', 'src/main/resources/icon.ico']
+            }
+        }
+        
+        // macOS-specific settings
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+            installerOptions += ['--mac-package-name', 'TracebitApp']
+            if (macOSIconExists) {
+                imageOptions += ['--icon', 'src/main/resources/icon.icns']
+            }
+        }
+        
+        // Linux-specific settings
+        if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            installerType = 'deb'
+            installerOptions += ['--linux-shortcut']
+            if (linuxIconExists) {
+                imageOptions += ['--icon', 'src/main/resources/icon.png']
+            }
+        }
+    }
+}
+
+// Make sure package task depends on jpackage
+tasks.jpackage.dependsOn('jar')
