@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ProductEntry } from '../shared/types'
+import { ProductEntry, AppConfig } from '../shared/types'
+import { Language, getTranslation } from '../shared/i18n'
 
 const App: React.FC = () => {
   const [entries, setEntries] = useState<ProductEntry[]>([])
@@ -7,7 +8,11 @@ const App: React.FC = () => {
   const [currentField, setCurrentField] = useState<'serial' | 'lot' | 'notes'>('serial')
   const [isConfigured, setIsConfigured] = useState(false)
   const [dataFolder, setDataFolder] = useState('')
+  const [language, setLanguage] = useState<Language>('it') // Default to Italian
+  const [saveMessage, setSaveMessage] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  const t = getTranslation(language)
 
   // Get today's filename
   const getTodaysFilename = () => {
@@ -34,9 +39,14 @@ const App: React.FC = () => {
   const loadConfig = async () => {
     try {
       const result = await window.electronAPI.loadConfig()
-      if (result.success && result.config?.dataFolder) {
-        setDataFolder(result.config.dataFolder)
-        setIsConfigured(true)
+      if (result.success && result.config) {
+        if (result.config.dataFolder) {
+          setDataFolder(result.config.dataFolder)
+          setIsConfigured(true)
+        }
+        if (result.config.language) {
+          setLanguage(result.config.language)
+        }
       }
     } catch (error) {
       console.error('Failed to load config:', error)
@@ -74,12 +84,33 @@ const App: React.FC = () => {
     try {
       const folder = await window.electronAPI.selectFolder()
       if (folder) {
-        await window.electronAPI.saveConfig({ dataFolder: folder })
+        const config: AppConfig = { dataFolder: folder, language }
+        await window.electronAPI.saveConfig(config)
         setDataFolder(folder)
         setIsConfigured(true)
       }
     } catch (error) {
       console.error('Failed to select folder:', error)
+    }
+  }
+
+  const changeLanguage = async (newLanguage: Language) => {
+    setLanguage(newLanguage)
+    const config: AppConfig = { dataFolder, language: newLanguage }
+    try {
+      await window.electronAPI.saveConfig(config)
+    } catch (error) {
+      console.error('Failed to save language preference:', error)
+    }
+  }
+
+  const saveNow = async () => {
+    try {
+      await saveCsv()
+      setSaveMessage(t.saveSuccess)
+      setTimeout(() => setSaveMessage(''), 3000) // Clear message after 3 seconds
+    } catch (error) {
+      console.error('Failed to save:', error)
     }
   }
 
@@ -151,9 +182,21 @@ const App: React.FC = () => {
         height: '100vh',
         padding: '20px' 
       }}>
-        <h1 style={{ marginBottom: '20px' }}>Product Scanner Setup</h1>
+        {/* Language selector at top */}
+        <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+          <select 
+            value={language} 
+            onChange={(e) => changeLanguage(e.target.value as Language)}
+            style={{ padding: '8px', fontSize: '14px' }}
+          >
+            <option value="it">{getTranslation('it').italian}</option>
+            <option value="en">{getTranslation('en').english}</option>
+          </select>
+        </div>
+        
+        <h1 style={{ marginBottom: '20px' }}>{t.setupTitle}</h1>
         <p style={{ marginBottom: '20px', textAlign: 'center' }}>
-          Please select a folder where your CSV files will be saved.
+          {t.setupDescription}
         </p>
         <button 
           onClick={selectDataFolder}
@@ -167,7 +210,7 @@ const App: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          Select Data Folder
+          {t.selectDataFolder}
         </button>
       </div>
     )
@@ -176,15 +219,29 @@ const App: React.FC = () => {
   return (
     <div style={{ padding: '20px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Product Scanner - {new Date().toLocaleDateString()}</h1>
-        <div style={{ fontSize: '14px', color: '#666' }}>
-          Data folder: {dataFolder}
-          <button 
-            onClick={selectDataFolder}
-            style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '12px' }}
-          >
-            Change
-          </button>
+        <h1>{t.appTitle} - {new Date().toLocaleDateString()}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* Language selector */}
+          <div>
+            <select 
+              value={language} 
+              onChange={(e) => changeLanguage(e.target.value as Language)}
+              style={{ padding: '4px 8px', fontSize: '12px' }}
+            >
+              <option value="it">{t.italian}</option>
+              <option value="en">{t.english}</option>
+            </select>
+          </div>
+          {/* Data folder info */}
+          <div style={{ fontSize: '14px', color: '#666' }}>
+            {t.dataFolder} {dataFolder}
+            <button 
+              onClick={selectDataFolder}
+              style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '12px' }}
+            >
+              {t.changeButton}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -196,9 +253,25 @@ const App: React.FC = () => {
         marginBottom: '20px',
         border: '2px solid #007AFF'
       }}>
-        <div style={{ marginBottom: '10px', fontSize: '18px', fontWeight: 'bold' }}>
-          {currentField === 'serial' ? 'Scan Product Serial Number' : 
-           currentField === 'lot' ? 'Scan Lot Number' : 'Add Notes (Optional)'}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+            {currentField === 'serial' ? t.scanSerial : 
+             currentField === 'lot' ? t.scanLot : t.addNotes}
+          </div>
+          <button 
+            onClick={saveNow}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {t.saveNowButton}
+          </button>
         </div>
         <input
           ref={inputRef}
@@ -207,8 +280,8 @@ const App: React.FC = () => {
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            currentField === 'serial' ? 'Product serial number...' :
-            currentField === 'lot' ? 'Lot number...' : 'Notes...'
+            currentField === 'serial' ? t.serialPlaceholder :
+            currentField === 'lot' ? t.lotPlaceholder : t.notesPlaceholder
           }
           style={{
             width: '100%',
@@ -219,8 +292,9 @@ const App: React.FC = () => {
           }}
           autoFocus
         />
-        <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-          Current entry: Serial: "{currentEntry.serial}" | Lot: "{currentEntry.lot}" | Notes: "{currentEntry.notes}"
+        <div style={{ marginTop: '10px', fontSize: '14px', color: '#666', display: 'flex', justifyContent: 'space-between' }}>
+          <span>{t.currentEntry} Serial: "{currentEntry.serial}" | Lot: "{currentEntry.lot}" | Note: "{currentEntry.notes}"</span>
+          {saveMessage && <span style={{ color: '#28a745', fontWeight: 'bold' }}>{saveMessage}</span>}
         </div>
       </div>
 
@@ -229,11 +303,11 @@ const App: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8f9fa' }}>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Serial Number</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Lot Number</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Notes</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Time</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Actions</th>
+              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.serialNumber}</th>
+              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.lotNumber}</th>
+              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.notes}</th>
+              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.time}</th>
+              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -279,7 +353,7 @@ const App: React.FC = () => {
                       fontSize: '12px'
                     }}
                   >
-                    Delete
+                    {t.deleteButton}
                   </button>
                 </td>
               </tr>
@@ -294,7 +368,7 @@ const App: React.FC = () => {
             color: '#666',
             backgroundColor: 'white'
           }}>
-            No entries yet. Start scanning to add products.
+            {t.noEntries}
           </div>
         )}
       </div>
@@ -307,7 +381,7 @@ const App: React.FC = () => {
         fontSize: '14px',
         color: '#666'
       }}>
-        Total entries today: {entries.length} | File: {getTodaysFilename()} | Auto-saves every 30 seconds
+        {t.totalEntries} {entries.length} | File: {getTodaysFilename()} | {t.autoSave}
       </div>
     </div>
   )

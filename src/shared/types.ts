@@ -8,6 +8,7 @@ export interface ProductEntry {
 
 export interface AppConfig {
   dataFolder?: string
+  language?: 'it' | 'en'
 }
 
 declare global {
