@@ -4,8 +4,8 @@ import { Language, getTranslation } from '../shared/i18n'
 
 const App: React.FC = () => {
   const [entries, setEntries] = useState<ProductEntry[]>([])
-  const [currentEntry, setCurrentEntry] = useState({ serial: '', lot: '', notes: '' })
-  const [currentField, setCurrentField] = useState<'serial' | 'lot' | 'notes'>('serial')
+  const [currentEntry, setCurrentEntry] = useState({ productCode: '', lot: '', quantity: '' })
+  const [currentField, setCurrentField] = useState<'productCode' | 'lot' | 'quantity'>('productCode')
   const [isConfigured, setIsConfigured] = useState(false)
   const [dataFolder, setDataFolder] = useState('')
   const [language, setLanguage] = useState<Language>('it') // Default to Italian
@@ -61,17 +61,17 @@ const App: React.FC = () => {
         const lines = result.content.trim().split('\n')
         if (lines.length > 1) { // Skip header
           const loadedEntries = lines.slice(1).map((line, index) => {
-            const [serial, lot, notes, timestamp] = line.split(',').map(field => 
+            const [productCode, lot, quantity, timestamp] = line.split(',').map(field => 
               field.replace(/^"|"$/g, '').replace(/""/g, '"')
             )
             return {
               id: `entry-${index}`,
-              serial: serial || '',
+              productCode: productCode || '',
               lot: lot || '',
-              notes: notes || '',
+              quantity: quantity || '',
               timestamp: timestamp || new Date().toISOString()
             }
-          }).filter(entry => entry.serial || entry.lot || entry.notes)
+          }).filter(entry => entry.productCode || entry.lot || entry.quantity)
           setEntries(loadedEntries)
         }
       }
@@ -117,9 +117,9 @@ const App: React.FC = () => {
   const saveCsv = async () => {
     try {
       const csvContent = [
-        'Serial,Lot,Notes,Timestamp',
+        'ProductCode,Lot,Quantity,Timestamp',
         ...entries.map(entry => 
-          `"${entry.serial}","${entry.lot}","${entry.notes}","${entry.timestamp}"`
+          `"${entry.productCode}","${entry.lot}","${entry.quantity}","${entry.timestamp}"`
         )
       ].join('\n')
       
@@ -133,21 +133,23 @@ const App: React.FC = () => {
     if (e.key === 'Enter') {
       e.preventDefault()
       
-      if (currentField === 'serial' && currentEntry.serial) {
+      if (currentField === 'productCode' && currentEntry.productCode) {
         setCurrentField('lot')
       } else if (currentField === 'lot' && currentEntry.lot) {
-        // Complete the entry and move to next row
+        setCurrentField('quantity')
+      } else if (currentField === 'quantity') {
+        // Complete the entry and move to next row (quantity can be empty)
         const newEntry: ProductEntry = {
           id: `entry-${Date.now()}`,
-          serial: currentEntry.serial,
+          productCode: currentEntry.productCode,
           lot: currentEntry.lot,
-          notes: currentEntry.notes,
+          quantity: currentEntry.quantity,
           timestamp: new Date().toISOString()
         }
         
         setEntries(prev => [...prev, newEntry])
-        setCurrentEntry({ serial: '', lot: '', notes: '' })
-        setCurrentField('serial')
+        setCurrentEntry({ productCode: '', lot: '', quantity: '' })
+        setCurrentField('productCode')
         saveCsv()
       }
     }
@@ -255,8 +257,8 @@ const App: React.FC = () => {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-            {currentField === 'serial' ? t.scanSerial : 
-             currentField === 'lot' ? t.scanLot : t.addNotes}
+            {currentField === 'productCode' ? t.scanProductCode : 
+             currentField === 'lot' ? t.scanLot : t.enterQuantity}
           </div>
           <button 
             onClick={saveNow}
@@ -280,8 +282,8 @@ const App: React.FC = () => {
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            currentField === 'serial' ? t.serialPlaceholder :
-            currentField === 'lot' ? t.lotPlaceholder : t.notesPlaceholder
+            currentField === 'productCode' ? t.productCodePlaceholder :
+            currentField === 'lot' ? t.lotPlaceholder : t.quantityPlaceholder
           }
           style={{
             width: '100%',
@@ -293,7 +295,7 @@ const App: React.FC = () => {
           autoFocus
         />
         <div style={{ marginTop: '10px', fontSize: '14px', color: '#666', display: 'flex', justifyContent: 'space-between' }}>
-          <span>{t.currentEntry} Serial: "{currentEntry.serial}" | Lot: "{currentEntry.lot}" | Note: "{currentEntry.notes}"</span>
+          <span>{t.currentEntry} Codice: "{currentEntry.productCode}" | Lotto: "{currentEntry.lot}" | Quantità: "{currentEntry.quantity}"</span>
           {saveMessage && <span style={{ color: '#28a745', fontWeight: 'bold' }}>{saveMessage}</span>}
         </div>
       </div>
@@ -301,23 +303,23 @@ const App: React.FC = () => {
       {/* Table */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8f9fa' }}>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.serialNumber}</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.lotNumber}</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.notes}</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.time}</th>
-              <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.actions}</th>
-            </tr>
-          </thead>
+                      <thead>
+              <tr style={{ backgroundColor: '#f8f9fa' }}>
+                <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.productCode}</th>
+                <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.lot}</th>
+                <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.quantity}</th>
+                <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.time}</th>
+                <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>{t.actions}</th>
+              </tr>
+            </thead>
           <tbody>
             {entries.map((entry, index) => (
               <tr key={entry.id}>
                 <td style={{ padding: '8px', border: '1px solid #ddd' }}>
                   <input
                     type="text"
-                    value={entry.serial}
-                    onChange={(e) => updateEntry(index, 'serial', e.target.value)}
+                    value={entry.productCode}
+                    onChange={(e) => updateEntry(index, 'productCode', e.target.value)}
                     style={{ width: '100%', padding: '4px', border: '1px solid #ccc' }}
                   />
                 </td>
@@ -332,8 +334,8 @@ const App: React.FC = () => {
                 <td style={{ padding: '8px', border: '1px solid #ddd' }}>
                   <input
                     type="text"
-                    value={entry.notes}
-                    onChange={(e) => updateEntry(index, 'notes', e.target.value)}
+                    value={entry.quantity}
+                    onChange={(e) => updateEntry(index, 'quantity', e.target.value)}
                     style={{ width: '100%', padding: '4px', border: '1px solid #ccc' }}
                   />
                 </td>

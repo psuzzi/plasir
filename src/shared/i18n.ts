@@ -16,25 +16,25 @@ export interface Translations {
   saveSuccess: string
   
   // Scanner interface
-  scanSerial: string
+  scanProductCode: string
   scanLot: string
-  addNotes: string
+  enterQuantity: string
   currentEntry: string
   noEntries: string
   startScanning: string
   
   // Table headers
-  serialNumber: string
-  lotNumber: string
-  notes: string
+  productCode: string
+  lot: string
+  quantity: string
   time: string
   actions: string
   deleteButton: string
   
   // Placeholders
-  serialPlaceholder: string
+  productCodePlaceholder: string
   lotPlaceholder: string
-  notesPlaceholder: string
+  quantityPlaceholder: string
   
   // Language
   language: string
@@ -59,25 +59,25 @@ export const translations: Record<Language, Translations> = {
     saveSuccess: "Dati salvati con successo!",
     
     // Scanner interface
-    scanSerial: "Scansiona Numero Seriale Prodotto",
-    scanLot: "Scansiona Numero Lotto",
-    addNotes: "Aggiungi Note (Opzionale)",
+    scanProductCode: "Scansiona Codice Prodotto",
+    scanLot: "Scansiona Lotto",
+    enterQuantity: "Inserisci Quantità (Opzionale)",
     currentEntry: "Inserimento corrente:",
     noEntries: "Nessun prodotto inserito. Inizia a scansionare per aggiungere prodotti.",
     startScanning: "Inizia a scansionare per aggiungere prodotti",
     
     // Table headers
-    serialNumber: "Numero Seriale",
-    lotNumber: "Numero Lotto",
-    notes: "Note",
+    productCode: "Codice Prodotto",
+    lot: "Lotto",
+    quantity: "Quantità",
     time: "Ora",
     actions: "Azioni",
     deleteButton: "Elimina",
     
     // Placeholders
-    serialPlaceholder: "Numero seriale prodotto...",
-    lotPlaceholder: "Numero di lotto...",
-    notesPlaceholder: "Note...",
+    productCodePlaceholder: "Codice prodotto...",
+    lotPlaceholder: "Lotto...",
+    quantityPlaceholder: "Quantità...",
     
     // Language
     language: "Lingua",
@@ -101,25 +101,25 @@ export const translations: Record<Language, Translations> = {
     saveSuccess: "Data saved successfully!",
     
     // Scanner interface
-    scanSerial: "Scan Product Serial Number",
-    scanLot: "Scan Lot Number",
-    addNotes: "Add Notes (Optional)",
+    scanProductCode: "Scan Product Code",
+    scanLot: "Scan Lot",
+    enterQuantity: "Enter Quantity (Optional)",
     currentEntry: "Current entry:",
     noEntries: "No entries yet. Start scanning to add products.",
     startScanning: "Start scanning to add products",
     
     // Table headers
-    serialNumber: "Serial Number",
-    lotNumber: "Lot Number",
-    notes: "Notes",
+    productCode: "Product Code",
+    lot: "Lot",
+    quantity: "Quantity",
     time: "Time",
     actions: "Actions",
     deleteButton: "Delete",
     
     // Placeholders
-    serialPlaceholder: "Product serial number...",
-    lotPlaceholder: "Lot number...",
-    notesPlaceholder: "Notes...",
+    productCodePlaceholder: "Product code...",
+    lotPlaceholder: "Lot...",
+    quantityPlaceholder: "Quantity...",
     
     // Language
     language: "Language",

@@ -1,8 +1,8 @@
 export interface ProductEntry {
   id: string
-  serial: string
+  productCode: string
   lot: string
-  notes: string
+  quantity: string
   timestamp: string
 }
 
